@@ -342,17 +342,106 @@ UNSW-NB15/
 
 ## 11. Instruções de Execução
 
+### 11.1 Pré-requisitos de Ambiente
+
+| Requisito | Versão mínima recomendada |
+|-----------|--------------------------|
+| Python | 3.8 (testado em 3.10) |
+| pip | ≥ 22 |
+| RAM | ≥ 8 GB (LS-SVM consome ~4–6 GB com o dataset completo) |
+| Disco | ≥ 2 GB livres (CSVs ≈ 300 MB + modelos + figuras) |
+| GPU (opcional) | CUDA 11.8 + cuDNN 8.6 para TensorFlow ≥ 2.15 |
+
+### 11.2 Passos
+
 ```bash
-# 1. Instalar dependências
+# 1. (Opcional) Criar e ativar ambiente virtual
+python -m venv .venv
+source .venv/bin/activate        # Linux/macOS
+.venv\Scripts\activate           # Windows
+
+# 2. Instalar dependências CPU
 pip install -r requirements.txt
 
-# 2. Colocar os CSVs oficiais na mesma pasta do main.py
+# 2b. (Alternativa GPU) Instalar TensorFlow com suporte CUDA
+pip install tensorflow[and-cuda]   # TF >= 2.15 — inclui CUDA/cuDNN automaticamente
 
-# 3. Executar
+# 3. Colocar os dois CSVs oficiais na mesma pasta de main.py:
+#    UNSW_NB15_training-set.csv   (~175 k amostras)
+#    UNSW_NB15_testing-set.csv    (~82 k amostras)
+
+# 4. Executar
 python main.py
 ```
 
 O script exibe progresso numerado (`[1/7]` a `[7/7]`) no console, facilitando o acompanhamento de cada etapa do pipeline.
+
+### 11.3 Saídas Esperadas
+
+Ao final da execução bem-sucedida:
+
+- Diretório `figures/` criado contendo **3 imagens PNG** (300 dpi).
+- Tabela LaTeX impressa diretamente no console — copie e cole no documento `.tex`.
+- Mensagem final: `Concluído! Figuras salvas em: <caminho absoluto>/figures`
+
+---
+
+## 12. Checklist para Execução no Servidor
+
+Use esta lista para garantir que nada foi esquecido ao transferir o projeto para outro ambiente.
+
+### 12.1 Preparação dos Arquivos
+
+- [ ] Copiar `UNSW_NB15_training-set.csv` para o diretório raiz do projeto (mesma pasta que `main.py`)
+- [ ] Copiar `UNSW_NB15_testing-set.csv` para o diretório raiz do projeto
+- [ ] Confirmar tamanhos dos arquivos:
+  - `UNSW_NB15_training-set.csv` → ≈ 175.341 linhas (+ cabeçalho), ≈ 50 colunas
+  - `UNSW_NB15_testing-set.csv`  → ≈ 82.332 linhas (+ cabeçalho), ≈ 50 colunas
+
+### 12.2 Configuração do Ambiente Python
+
+- [ ] Verificar versão do Python: `python --version` (deve ser ≥ 3.8)
+- [ ] Criar ambiente virtual (recomendado): `python -m venv .venv` e ativar
+- [ ] Instalar dependências: `pip install -r requirements.txt`
+- [ ] (Se GPU disponível) Instalar TensorFlow com CUDA: `pip install tensorflow[and-cuda]`
+- [ ] Verificar instalação do TensorFlow: `python -c "import tensorflow as tf; print(tf.__version__)"`
+- [ ] (Opcional) Confirmar que a GPU é reconhecida: `python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"`
+
+### 12.3 Execução e Verificação
+
+- [ ] Executar o script completo: `python main.py`
+- [ ] Confirmar que o console exibiu as etapas `[1/7]` até `[7/7]` sem erros
+- [ ] Verificar que o diretório `figures/` foi criado com **exatamente 3 arquivos**:
+  - [ ] `figures/roc_unsw_nb15.png`
+  - [ ] `figures/prc_unsw_nb15.png`
+  - [ ] `figures/fpr_unsw_nb15.png`
+- [ ] Confirmar que a tabela LaTeX foi impressa no console ao final da etapa `[7/7]`
+
+### 12.4 Integração com o Documento LaTeX
+
+- [ ] Copiar o bloco `\begin{table}...\end{table}` impresso no console para o arquivo `.tex` desejado
+- [ ] Certificar que o preâmbulo do documento inclui `\usepackage{booktabs}` (necessário para `\toprule`, `\midrule`, `\bottomrule`)
+- [ ] Copiar os 3 PNGs para a pasta de figuras do projeto LaTeX (ex.: `figuras/`)
+- [ ] Inserir as figuras no documento com, por exemplo:
+
+```latex
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.75\textwidth]{figuras/roc_unsw_nb15}
+  \caption{Curva ROC — UNSW-NB15 (LS-SVM × BiLSTM)}
+  \label{fig:roc_unsw_nb15}
+\end{figure}
+```
+
+### 12.5 Solução de Problemas Comuns
+
+| Sintoma | Causa provável | Solução |
+|---------|---------------|---------|
+| `FileNotFoundError: UNSW_NB15_training-set.csv` | CSV ausente ou nome errado | Verificar nome exato do arquivo e diretório de execução |
+| `AssertionError: Coluna 'label' não encontrada!` | CSV com cabeçalho diferente | Confirmar que é o arquivo oficial UNSW-NB15 |
+| `OOM` / `MemoryError` durante LS-SVM | RAM insuficiente | Usar máquina com ≥ 8 GB de RAM ou reduzir `cv=2` no `CalibratedClassifierCV` |
+| TensorFlow não detecta GPU | Driver/CUDA incompatível | Verificar compatibilidade em [tensorflow.org/install/pip](https://www.tensorflow.org/install/pip) |
+| BiLSTM muito lento (CPU) | Sem GPU | Esperado; o treinamento pode levar 15–40 min em CPU dependendo do hardware |
 
 ---
 
