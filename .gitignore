@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+resultados/
+cicids2017_cleaned.csv
+UNSW_NB15_testing-set.csv
+UNSW_NB15_training-set.csv
